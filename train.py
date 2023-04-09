@@ -1,18 +1,19 @@
 import torch
-from utils import encode
 from model import CheekGPT
+import numpy as np
+import os
+import pickle
 
-MODEL_PATH = "models/model.pth"
-DATA_PATH = "data/rapdataset.txt"
-TRAIN_SIZE = 0.9
-BLOCK_SIZE = 64
+DATA_PATH = 'data/bpe_level_rap'
+MODEL_PATH = "models/bpe_level_models/model.pth"
+BLOCK_SIZE = 128
 BATCH_SIZE = 32
 TRAIN_ITERS = 3500
 EVAL_ITERS = 100
 LR = 1e-3
-N_EMBEDS = 126
-NUM_HEADS = 6
-N_LAYER = 6
+N_EMBEDS = 160
+NUM_HEADS = 8
+N_LAYER = 8
 DROPOUT = 0.2
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
@@ -27,7 +28,6 @@ def calc_loss():
             x, y = get_batch(training=i)
             _, loss = model(x, y)
             cum_loss += loss.item()
-        
         losses.append(cum_loss/EVAL_ITERS)
 
     model.train()
@@ -37,29 +37,31 @@ def calc_loss():
 def get_batch(training=True):
         data = train_data if training else test_data
         idx = torch.randint(0,len(data)-BLOCK_SIZE, (BATCH_SIZE,))
-        x = torch.stack([data[i:i+BLOCK_SIZE] for i in idx]).to(device)
-        y = torch.stack([data[i+1:i+BLOCK_SIZE+1] for i in idx]).to(device)
+        x = torch.stack([torch.from_numpy((data[i:i+BLOCK_SIZE]).astype(np.int64)) for i in idx]).to(device)
+        y = torch.stack([torch.from_numpy((data[i+1:i+BLOCK_SIZE+1]).astype(np.int64)) for i in idx]).to(device)
         
         return x, y
 
 
 if __name__ == "__main__":
-    with open(DATA_PATH, "r") as f:
-        text = f.read()
+    train_data = np.memmap(os.path.join(DATA_PATH, 'train.bin'), dtype=np.uint16, mode='r')
+    test_data = np.memmap(os.path.join(DATA_PATH, 'test.bin'), dtype=np.uint16, mode='r')
 
-    chars = sorted(list(set(text)))
-    vocab_size = len(chars)
+    files = [f for f in os.listdir(DATA_PATH) if os.path.isfile(os.path.join(DATA_PATH, f))]
+    if 'meta.pkl' in files:
+        with open(os.path.join(DATA_PATH, 'meta.pkl'), 'rb') as f:
+            meta = pickle.load(f)
+        vocab_size = meta['vocab_size']
+    else:
+        # vocab_size of GPT-2 to 50304 (50257 rounded up for efficiency)
+        vocab_size =  50304
+    
+    print(f"found vocab size of {vocab_size}")
 
-    data = torch.tensor(encode(text, chars), dtype=torch.long)
     model = CheekGPT(vocab_size, N_EMBEDS, N_LAYER, BLOCK_SIZE, NUM_HEADS, DROPOUT).to(device)
 
-    print(f"Your data set has {len(data)} characters")
-    print(f"Dataset contains: {''.join(chars)} characters")
+    print(f"Your traindata set has {len(train_data)} characters")
     print(f"This models has {sum(p.numel() for p in model.parameters()) / 1e6} million paramters")
-
-    train_n = int(TRAIN_SIZE*len(data))
-    train_data = data[:train_n]
-    test_data = data[train_n:]
 
 
     optim = torch.optim.Adam(params=model.parameters(), lr=LR)

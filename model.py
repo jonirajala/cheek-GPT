@@ -78,7 +78,7 @@ class CheekGPT(nn.Module):
         # Embedding returns "scores" for each character
         B, T = idx.shape
         embeddings = self.embedding(idx) # (B, T, C) 
-        pos_embeddings = self.positional_embedding(torch.arange(T))
+        pos_embeddings = self.positional_embedding(torch.arange(T, device=idx.device))
         x = embeddings + pos_embeddings
         x = self.blocks(x)
         x = self.ln(x)
