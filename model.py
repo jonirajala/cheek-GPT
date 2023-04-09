@@ -1,6 +1,7 @@
 import torch
 from torch import nn
 from torch.nn import functional as F
+import math
 
 
 class Block(nn.Module):
@@ -33,45 +34,35 @@ class FeedForward(nn.Module):
 class MultiHeadAttention(nn.Module):
     def __init__(self, n_embeds, n_heads, dropout, block_size):
         super().__init__()
-        head_size = n_embeds // n_heads
-        self.heads = nn.ModuleList([Head(head_size, n_embeds, block_size, dropout) for _ in range(n_heads)])
+        self.n_heads = n_heads
+        self.n_embeds = n_embeds
+        
         self.projection = nn.Linear(n_embeds, n_embeds)
         self.dropout = nn.Dropout(dropout)
-
-    def forward(self, x):
-        out = torch.cat([h(x) for h in self.heads], dim=-1)
-        out = self.projection(out)
-        out = self.dropout(out)
-        return out
-
-
-class Head(nn.Module):
-    def __init__(self, head_size, n_embeds, block_size, dropout):
-        super().__init__()
-        self.key = nn.Linear(n_embeds, head_size, bias=False)
-        self.query = nn.Linear(n_embeds, head_size, bias=False)
-        self.value = nn.Linear(n_embeds, head_size, bias=False)
-        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)))
-
-        self.dropout = nn.Dropout(dropout)
-
+        self.linear_heads = nn.Linear(n_embeds, 3 * n_embeds) # combine key, query and value into single linear model
+        self.register_buffer('tril', torch.tril(torch.ones(block_size, block_size)).view(1, 1, block_size, block_size))
 
     def forward(self, x):
         B, T, C = x.shape
-        k = self.key(x)
-        q = self.query(x)
-        v = self.value(x)
 
-        wei = q @ k.transpose(-2,-1) * C**-0.5
-        wei = wei.masked_fill(self.tril[:T, :T] == 0, float('-inf'))
+        k, q, v = self.linear_heads(x).split(self.n_embeds, dim=-1)
+        k = k.view(B, T, self.n_heads, C // self.n_heads).transpose(1, 2)
+        q = q.view(B, T, self.n_heads, C // self.n_heads).transpose(1, 2)
+        v = v.view(B, T, self.n_heads, C // self.n_heads).transpose(1, 2)
+
+        wei = q @ k.transpose(-2,-1) * (1.0 / math.sqrt(k.size(-1)))
+        wei = wei.masked_fill(self.tril[:,:,:T,:T]  == 0, float('-inf'))
         wei = F.softmax(wei, dim=-1)
         wei = self.dropout(wei)
 
         out = wei @ v
+        out = out.transpose(1, 2).contiguous().view(B, T, C)
 
+        out = self.projection(out)
+        out = self.dropout(out)
         return out
 
-class DecoderTransformer(nn.Module):
+class CheekGPT(nn.Module):
     def __init__(self, vocab_size, n_embeds, n_layers, block_size, n_heads, dropout):
         super().__init__()
         self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=n_embeds) # basically (VOCAB_SIZE x VOCAB_SIZE) tensor
@@ -113,4 +104,3 @@ class DecoderTransformer(nn.Module):
             idx = torch.cat((idx, idx_next), dim=1)
         self.train()
         return idx
-
