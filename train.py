@@ -1,20 +1,21 @@
 import torch
 from utils import encode
-from model import DecoderTransformer
+from model import CheekGPT
 
 MODEL_PATH = "models/model.pth"
 DATA_PATH = "data/rapdataset.txt"
 TRAIN_SIZE = 0.9
-BLOCK_SIZE = 32
+BLOCK_SIZE = 64
 BATCH_SIZE = 32
 TRAIN_ITERS = 10000
 EVAL_ITERS = 100
 LR = 1e-3
-N_EMBEDS = 63
-NUM_HEADS = 3
-N_LAYER = 3
+N_EMBEDS = 126
+NUM_HEADS = 6
+N_LAYER = 6
 DROPOUT = 0.2
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
 
 @torch.no_grad()
 def calc_loss():
@@ -31,6 +32,7 @@ def calc_loss():
 
     model.train()
     return losses[0], losses[1]
+
 
 def get_batch(training=True):
         data = train_data if training else test_data
@@ -49,7 +51,7 @@ if __name__ == "__main__":
     vocab_size = len(chars)
 
     data = torch.tensor(encode(text, chars), dtype=torch.long)
-    model = DecoderTransformer(vocab_size, N_EMBEDS, N_LAYER, BLOCK_SIZE, NUM_HEADS, DROPOUT).to(device)
+    model = CheekGPT(vocab_size, N_EMBEDS, N_LAYER, BLOCK_SIZE, NUM_HEADS, DROPOUT).to(device)
 
     print(f"Your data set has {len(data)} characters")
     print(f"Dataset contains: {''.join(chars)} characters")
@@ -61,6 +63,7 @@ if __name__ == "__main__":
 
 
     optim = torch.optim.Adam(params=model.parameters(), lr=LR)
+    model.train()
     for i in range(0, TRAIN_ITERS):
         x, y = get_batch(training=True)
         optim.zero_grad()

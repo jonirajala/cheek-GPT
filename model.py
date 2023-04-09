@@ -71,7 +71,7 @@ class Head(nn.Module):
 
         return out
 
-class DecoderTransformer(nn.Module):
+class CheekGPT(nn.Module):
     def __init__(self, vocab_size, n_embeds, n_layers, block_size, n_heads, dropout):
         super().__init__()
         self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=n_embeds) # basically (VOCAB_SIZE x VOCAB_SIZE) tensor
