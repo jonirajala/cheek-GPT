@@ -61,7 +61,7 @@ if __name__ == "__main__":
 
     model = CheekGPT(vocab_size, N_EMBEDS, N_LAYER, BLOCK_SIZE, NUM_HEADS, DROPOUT).to(device)
 
-    print(f"Your traindata set has {len(train_data)} characters")
+    print(f"Your data has {len(train_data) + len(test_data)} tokens")
     print(f"This models has {sum(p.numel() for p in model.parameters()) / 1e6} million paramters")
 
 
@@ -76,14 +76,14 @@ if __name__ == "__main__":
         loss.backward()
         optim.step()
         if i % 100 == 0:
-            eval_loss, train_loss = calc_loss()
+            test_loss, train_loss = calc_loss()
             losses["train"].append(train_loss)
-            losses["test"].append(eval_loss)
-            print(f"{i+1}/{TRAIN_ITERS}, Train loss: {train_loss}, Eval loss: {eval_loss}")
+            losses["test"].append(test_loss)
+            print(f"{i+1}/{TRAIN_ITERS}, Train loss: {train_loss}, Eval loss: {test_loss}")
         scheduler.step()
 
 
     torch.save(model.state_dict(), MODEL_PATH)
 
-    plt.plot(np.arange(0, TRAIN_ITERS//100, losses["train"])
+    plt.plot(np.arange(0, TRAIN_ITERS//100, losses["train"]))
     plt.plot(np.arange(0, TRAIN_ITERS//100), losses["test"])    
