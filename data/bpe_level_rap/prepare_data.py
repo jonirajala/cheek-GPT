@@ -3,7 +3,7 @@ import os
 import tiktoken
 
 TRAIN_SIZE = 0.9
-DATA_PATH = "../raw_rapdataset.txt"
+DATA_PATH = "../raw_data/raw_rapdataset.txt"
 
 
 with open(DATA_PATH, "r") as f:
@@ -11,6 +11,8 @@ with open(DATA_PATH, "r") as f:
 
 encoder = tiktoken.get_encoding("gpt2")
 data = encoder.encode_ordinary(text)
+
+print(f"Your data has {len(data)} tokens")
 
 train_n = int(TRAIN_SIZE*len(data))
 train_data = data[:train_n]

@@ -15,15 +15,14 @@ def combine_lyrics():
             for file in files:                    
                 if file.endswith(".txt"):
                     with open(os.path.join(artist_dir, file), "r") as input_f:
-                        output_f.write(input_f.read().replace("<br />", " "))
+                        output_f.write(input_f.read().replace("Embed", "").replace("You might also like", "")) # You can remove the replaces if you run the scrape_lyrics from zero
 
 def scrape_lyrics():
     token = "hn-fXDODUZ1p4Laful9xzmYV6GdDPkReGtmRyedcoCyGQtgmlp9Q0RvZmqCu8gAB"
 
     genius = Genius(token)
     # artists = ["william (FIN)", "Sexmane", "Cledos", "ibe", "Niko Katavainen", "Turisti", "Fabe (FIN)", "Costi (FIN)", "Lauri Haav", "Ghettomasa", "Cheek (FIN)",  "DeezyDavid", "Shrty", "Blacflaco", "Nebi", "Ege Zulu", "Elastinen", "Gracias", "Karri Koira", "Ruudolf", "Mäk Gälis", "Paperi-T", "TheoFuego", "Jore & Zpoppa", "Axel Kala", ""]
-    artists = ["Niko Katavainen", "Karri Koira", "Ruudolf", "Mäk Gälis", "Paperi-T", "TheoFuego", "Jore & Zpoppa", "Axel Kala"]
-    # test Niko Katavainen
+    artists = ["Paperi-T", "TheoFuego", "Jore & Zpoppa", "Axel Kala"]
     for artist_name in artists:
         artist = genius.search_artist(artist_name, sort="title", allow_name_change=False)
         if not artist:
@@ -46,7 +45,7 @@ def scrape_lyrics():
                         lyrics = song.to_text().split("\n", 1)[1]
                     except IndexError:
                         continue
-                    waste_lines = ["[Chorus]\n", "[Bridge]\n", "[Hook]\n", "[Verse 1]\n", "[Verse 2]\n", "[Kertosäe]\n", "[Outro]\n", "[Verse]\n"]
+                    waste_lines = ["[Chorus]\n", "[Bridge]\n", "[Hook]\n", "[Verse 1]\n", "[Verse 2]\n", "[Kertosäe]\n", "[Outro]\n", "[Verse]\n", "Embed"]
                     for line in waste_lines:
                         lyrics = lyrics.replace(line, "")
                     with open(song_path, 'w') as file:
@@ -57,5 +56,5 @@ def scrape_lyrics():
 
 
 if __name__ == "__main__":
-    scrape_lyrics()
-    # combine_lyrics()
+    # scrape_lyrics()
+    combine_lyrics()

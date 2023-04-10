@@ -4,7 +4,7 @@ import torch
 import pickle
 
 TRAIN_SIZE = 0.9
-DATA_PATH = "../raw_rapdataset.txt"
+DATA_PATH = "../raw_data/raw_rapdataset.txt"
 
 
 with open(DATA_PATH, "r") as f:
@@ -30,6 +30,8 @@ vocab_size = len(chars)
 train_n = int(TRAIN_SIZE*len(data))
 train_data = data[:train_n]
 test_data = data[train_n:]
+
+print(f"Your data has {len(data)} tokens")
 
 train_data.tofile(os.path.join(os.path.dirname(__file__), 'train.bin'))
 test_data.tofile(os.path.join(os.path.dirname(__file__), 'test.bin'))

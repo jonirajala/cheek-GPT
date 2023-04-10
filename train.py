@@ -3,6 +3,7 @@ from model import CheekGPT
 import numpy as np
 import os
 import pickle
+import matplotlib.pyplot as plt
 
 DATA_PATH = 'data/bpe_level_rap'
 MODEL_PATH = "models/bpe_level_models/model.pth"
@@ -65,7 +66,9 @@ if __name__ == "__main__":
 
 
     optim = torch.optim.Adam(params=model.parameters(), lr=LR)
+    scheduler = torch.optim.lr_scheduler.StepLR(optim, step_size=700, gamma=0.1)
     model.train()
+    losses = {"train": [], "test": []}
     for i in range(0, TRAIN_ITERS):
         x, y = get_batch(training=True)
         optim.zero_grad()
@@ -74,6 +77,13 @@ if __name__ == "__main__":
         optim.step()
         if i % 100 == 0:
             eval_loss, train_loss = calc_loss()
+            losses["train"].append(train_loss)
+            losses["test"].append(eval_loss)
             print(f"{i+1}/{TRAIN_ITERS}, Train loss: {train_loss}, Eval loss: {eval_loss}")
+        scheduler.step()
+
 
     torch.save(model.state_dict(), MODEL_PATH)
+
+    plt.plot(np.arange(0, TRAIN_ITERS//100, losses["train"])
+    plt.plot(np.arange(0, TRAIN_ITERS//100), losses["test"])    
