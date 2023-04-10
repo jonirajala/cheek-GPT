@@ -1,7 +1,8 @@
 # cheek-GPT
 
+Very basic decoder only transformer trained on finnish rap lyrics data. Around 1 M tokens.
 
-# Examples
+## Examples
 These sentenses make sense if you first translate them to english and then back to finnish 
 
 ---
@@ -92,4 +93,4 @@ Olen tehnyt mitä tarjoan\
 En tiedä millä on väliä kuinka kuolet\
 En jaksa enää\
 Voi, olen poissa\
-En tarvitse peliä\
+En tarvitse peliä
